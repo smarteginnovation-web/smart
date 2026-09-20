@@ -45,6 +45,7 @@
     .btn-email { background-color: #ea4335; color: #ffffff; }
     .btn-qr-toggle { background-color: #6c757d; color: #ffffff; }
     .btn-qr-toggle.active { background-color: #17a2b8; }
+    .btn-clear { background-color: #dc3545; color: #ffffff; }
 
     .invoice-card {
       max-width: 900px;
@@ -97,7 +98,6 @@
       font-size: 13px;
     }
 
-    /* Category selection bar on web page */
     .mode-selector {
       background: #eef2f7;
       border: 1px solid #cbd5e1;
@@ -282,10 +282,20 @@
       cursor: pointer;
       margin-bottom: 15px;
     }
+    .btn-del-row {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
 
-    /* Hide Category Bar and fix canvas text rendering during PDF Download */
     .pdf-render .mode-selector,
-    .pdf-render .btn-add-row {
+    .pdf-render .btn-add-row,
+    .pdf-render .btn-del-row,
+    .pdf-render .col-action {
       display: none !important;
     }
 
@@ -309,6 +319,7 @@
 
   <!-- Action Buttons -->
   <div class="action-bar">
+    <button type="button" class="btn btn-clear" onclick="clearSavedData()">🗑️ Reset Data</button>
     <button type="button" id="qr-toggle-btn" class="btn btn-qr-toggle" onclick="toggleQRCode()">📱 QR Code: OFF</button>
     <button type="button" class="btn btn-whatsapp" onclick="shareWhatsAppPDF()">💬 Share PDF via WhatsApp</button>
     <button type="button" class="btn btn-email" onclick="shareEmailPDF()">✉️ Share PDF via Email</button>
@@ -319,8 +330,8 @@
     <div class="header">
       <div class="company-details">
         <h2>Smart EG Electronics</h2>
-        <p>Sherin's Complex, 10/726, puduppariyaram,thanavu, olavakkode </p>
-        <p> HP Petrol Pump, palakkad mannarkkad calicut Road, Palakkad, Kerala 678731</p>
+        <p>Sherin's Complex, 10/726, Puduppariyaram, Thanavu, Olavakkode</p>
+        <p>HP Petrol Pump, Palakkad Mannarkkad Calicut Road, Palakkad, Kerala 678731</p>
         <p><strong>Email:</strong> smarteginnovation@gmail.com</p>
         <p><strong>GSTIN:</strong> 32DAUPG9662K1Z0</p>
       </div>
@@ -329,18 +340,21 @@
         <div id="invoice-type-badge" class="invoice-type-badge">B2B TAX INVOICE</div>
         <p>
           <strong>Invoice No:</strong> 
-          <input type="text" id="inv-no" class="inline-input" value="001" oninput="generateQRCode()">
+          <input type="text" id="inv-no" class="inline-input" value="001" oninput="saveDataAndSync()">
         </p>
-        <p><strong>Date:</strong> <span id="auto-date">19/09/2026</span></p>
+        <p>
+          <strong>Date:</strong> 
+          <input type="text" id="inv-date" class="inline-input" placeholder="DD/MM/YYYY" oninput="saveDataAndSync()">
+        </p>
         <p><strong>State Code:</strong> 32 (Kerala)</p>
       </div>
     </div>
 
-    <!-- Category selector (Visible on screen, hidden in downloaded PDF) -->
+    <!-- Category selector -->
     <div class="mode-selector">
       <span style="font-weight:bold; font-size:13px;">Category:</span>
-      <label><input type="radio" name="invoice-category" value="B2B" checked onchange="toggleInvoiceCategory()"> B2B</label>
-      <label><input type="radio" name="invoice-category" value="B2C" onchange="toggleInvoiceCategory()"> B2C</label>
+      <label><input type="radio" name="invoice-category" value="B2B" checked onchange="toggleInvoiceCategory(); saveDataAndSync();"> B2B</label>
+      <label><input type="radio" name="invoice-category" value="B2C" onchange="toggleInvoiceCategory(); saveDataAndSync();"> B2C</label>
     </div>
 
     <div class="billing-info">
@@ -348,28 +362,28 @@
         <h3 id="buyer-box-heading">Buyer (Bill to):</h3>
         <div class="input-group">
           <label>Name:</label>
-          <input type="text" id="buyer-name" class="input-field" value="SCIENCE TECH" oninput="generateQRCode()">
+          <input type="text" id="buyer-name" class="input-field" value="" oninput="saveDataAndSync()">
         </div>
         <div class="input-group">
           <label>Address:</label>
-          <textarea id="buyer-address" class="address-textarea">1/225, ERAMANGALAM, NOCHULLY PO, KUZHALMANNAM, PALAKKAD</textarea>
+          <textarea id="buyer-address" class="address-textarea" oninput="saveDataAndSync()"></textarea>
         </div>
         <div class="input-group">
           <label>Phone:</label>
-          <input type="text" id="buyer-phone" class="input-field" value="9847732000">
+          <input type="text" id="buyer-phone" class="input-field" value="" oninput="saveDataAndSync()">
         </div>
         <div class="input-group" id="buyer-gstin-group">
           <label>GSTIN:</label>
-          <input type="text" id="buyer-gstin" class="input-field" value="32CLYPS3057G1ZM">
+          <input type="text" id="buyer-gstin" class="input-field" value="" oninput="saveDataAndSync()">
         </div>
       </div>
 
       <div class="billing-box" id="consignee-box">
         <h3>Consignee (Ship to):</h3>
-        <div class="input-group"><label>Name:</label><input type="text" id="ship-name" class="input-field" value="SCIENCE TECH"></div>
-        <div class="input-group"><label>Address:</label><textarea id="ship-address" class="address-textarea">1/225, ERAMANGALAM, NOCHULLY PO, KUZHALMANNAM, PALAKKAD</textarea></div>
-        <div class="input-group"><label>Phone:</label><input type="text" id="ship-phone" class="input-field" value="9847732000"></div>
-        <div class="input-group"><label>GSTIN:</label><input type="text" id="ship-gstin" class="input-field" value="32CLYPS3057G1ZM"></div>
+        <div class="input-group"><label>Name:</label><input type="text" id="ship-name" class="input-field" value="" oninput="saveDataAndSync()"></div>
+        <div class="input-group"><label>Address:</label><textarea id="ship-address" class="address-textarea" oninput="saveDataAndSync()"></textarea></div>
+        <div class="input-group"><label>Phone:</label><input type="text" id="ship-phone" class="input-field" value="" oninput="saveDataAndSync()"></div>
+        <div class="input-group"><label>GSTIN:</label><input type="text" id="ship-gstin" class="input-field" value="" oninput="saveDataAndSync()"></div>
       </div>
     </div>
 
@@ -385,20 +399,22 @@
           <th class="text-center" style="width: 8%;">Disc (%)</th>
           <th class="text-right" style="width: 12%;">Taxable Val (₹)</th>
           <th class="text-center" style="width: 9%;">GST (%)</th>
-          <th class="text-right" style="width: 13%;">Amount (₹)</th>
+          <th class="text-right" style="width: 11%;">Amount (₹)</th>
+          <th class="text-center col-action" style="width: 4%;">Action</th>
         </tr>
       </thead>
       <tbody id="items-body">
         <tr>
           <td class="text-center row-num">1</td>
-          <td><input type="text" class="table-input item-desc" value="COMPUTER POWER WIRE"></td>
-          <td><input type="text" class="table-input item-hsn text-center" value="8544"></td>
-          <td><input type="number" class="table-input item-qty text-center" value="10" oninput="calculateRow(this)"></td>
-          <td><input type="number" class="table-input item-rate text-right" value="80.00" oninput="calculateRow(this)"></td>
-          <td><input type="number" class="table-input item-disc text-center" value="1" oninput="calculateRow(this)"></td>
-          <td class="text-right item-taxable">792.00</td>
-          <td><input type="number" class="table-input item-gst text-center" value="18" oninput="calculateRow(this)"></td>
-          <td class="text-right item-total">934.56</td>
+          <td><input type="text" class="table-input item-desc" value="" oninput="saveDataAndSync()"></td>
+          <td><input type="text" class="table-input item-hsn text-center" value="" oninput="saveDataAndSync()"></td>
+          <td><input type="number" class="table-input item-qty text-center" value="" oninput="calculateRow(this); saveDataAndSync();"></td>
+          <td><input type="number" class="table-input item-rate text-right" value="" oninput="calculateRow(this); saveDataAndSync();"></td>
+          <td><input type="number" class="table-input item-disc text-center" value="0" oninput="calculateRow(this); saveDataAndSync();"></td>
+          <td class="text-right item-taxable"></td>
+          <td><input type="number" class="table-input item-gst text-center" value="18" oninput="calculateRow(this); saveDataAndSync();"></td>
+          <td class="text-right item-total"></td>
+          <td class="text-center col-action"><button type="button" class="btn-del-row" onclick="deleteRow(this)">✕</button></td>
         </tr>
       </tbody>
     </table>
@@ -408,25 +424,25 @@
     <div class="calculation-section">
       <div class="words-box">
         <h4>Amount Chargeable (in words):</h4>
-        <div id="amount-in-words" class="amount-words-text">Nine Hundred Thirty Four Rupees and Fifty Six Paisa Only</div>
+        <div id="amount-in-words" class="amount-words-text"></div>
       </div>
 
       <table class="totals-table">
         <tr>
           <td>Sub Total (Taxable):</td>
-          <td class="text-right" id="sub-total">₹ 792.00</td>
+          <td class="text-right" id="sub-total"></td>
         </tr>
         <tr>
           <td>CGST: 9%</td>
-          <td class="text-right" id="cgst-val">₹ 71.28</td>
+          <td class="text-right" id="cgst-val"></td>
         </tr>
         <tr>
           <td>SGST: 9%</td>
-          <td class="text-right" id="sgst-val">₹ 71.28</td>
+          <td class="text-right" id="sgst-val"></td>
         </tr>
         <tr class="grand-total">
           <td>Total Amount:</td>
-          <td class="text-right" id="grand-total">₹ 934.56</td>
+          <td class="text-right" id="grand-total"></td>
         </tr>
       </table>
     </div>
@@ -458,13 +474,112 @@
     let isQREnabled = false;
 
     window.onload = function() {
+      // Load saved invoice data from LocalStorage if available
+      loadSavedData();
       calculateOverallTotals();
     };
 
+    function saveDataAndSync() {
+      saveDataToLocalStorage();
+      if (isQREnabled) generateQRCode();
+    }
+
+    function saveDataToLocalStorage() {
+      const data = {
+        invNo: document.getElementById('inv-no').value,
+        invDate: document.getElementById('inv-date').value,
+        category: document.querySelector('input[name="invoice-category"]:checked')?.value || 'B2B',
+        buyerName: document.getElementById('buyer-name').value,
+        buyerAddress: document.getElementById('buyer-address').value,
+        buyerPhone: document.getElementById('buyer-phone').value,
+        buyerGstin: document.getElementById('buyer-gstin').value,
+        shipName: document.getElementById('ship-name').value,
+        shipAddress: document.getElementById('ship-address').value,
+        shipPhone: document.getElementById('ship-phone').value,
+        shipGstin: document.getElementById('ship-gstin').value,
+        items: []
+      };
+
+      const rows = document.querySelectorAll('#items-body tr');
+      rows.forEach(row => {
+        data.items.push({
+          desc: row.querySelector('.item-desc').value,
+          hsn: row.querySelector('.item-hsn').value,
+          qty: row.querySelector('.item-qty').value,
+          rate: row.querySelector('.item-rate').value,
+          disc: row.querySelector('.item-disc').value,
+          gst: row.querySelector('.item-gst').value
+        });
+      });
+
+      localStorage.setItem('smarteg_recent_invoice', JSON.stringify(data));
+    }
+
+    function loadSavedData() {
+      const saved = localStorage.getItem('smarteg_recent_invoice');
+      if (!saved) {
+        // Set default current date if no saved data exists
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        document.getElementById('inv-date').value = `${dd}/${mm}/${yyyy}`;
+        return;
+      }
+
+      const data = JSON.parse(saved);
+
+      document.getElementById('inv-no').value = data.invNo || '000';
+      document.getElementById('inv-date').value = data.invDate || '';
+      
+      if (data.category) {
+        const catRadio = document.querySelector(`input[name="invoice-category"][value="${data.category}"]`);
+        if (catRadio) catRadio.checked = true;
+      }
+      toggleInvoiceCategory();
+
+      document.getElementById('buyer-name').value = data.buyerName || '';
+      document.getElementById('buyer-address').value = data.buyerAddress || '';
+      document.getElementById('buyer-phone').value = data.buyerPhone || '';
+      document.getElementById('buyer-gstin').value = data.buyerGstin || '';
+
+      document.getElementById('ship-name').value = data.shipName || '';
+      document.getElementById('ship-address').value = data.shipAddress || '';
+      document.getElementById('ship-phone').value = data.shipPhone || '';
+      document.getElementById('ship-gstin').value = data.shipGstin || '';
+
+      if (data.items && data.items.length > 0) {
+        const tbody = document.getElementById('items-body');
+        tbody.innerHTML = '';
+        data.items.forEach((item, index) => {
+          const newRow = document.createElement('tr');
+          newRow.innerHTML = `
+            <td class="text-center row-num">${index + 1}</td>
+            <td><input type="text" class="table-input item-desc" value="${item.desc || ''}" oninput="saveDataAndSync()"></td>
+            <td><input type="text" class="table-input item-hsn text-center" value="${item.hsn || ''}" oninput="saveDataAndSync()"></td>
+            <td><input type="number" class="table-input item-qty text-center" value="${item.qty || 1}" oninput="calculateRow(this); saveDataAndSync();"></td>
+            <td><input type="number" class="table-input item-rate text-right" value="${item.rate || '0.00'}" oninput="calculateRow(this); saveDataAndSync();"></td>
+            <td><input type="number" class="table-input item-disc text-center" value="${item.disc || 0}" oninput="calculateRow(this); saveDataAndSync();"></td>
+            <td class="text-right item-taxable">0.00</td>
+            <td><input type="number" class="table-input item-gst text-center" value="${item.gst || 18}" oninput="calculateRow(this); saveDataAndSync();"></td>
+            <td class="text-right item-total">0.00</td>
+            <td class="text-center col-action"><button type="button" class="btn-del-row" onclick="deleteRow(this)">✕</button></td>
+          `;
+          tbody.appendChild(newRow);
+          calculateRow(newRow.querySelector('.item-qty'));
+        });
+      }
+    }
+
+    function clearSavedData() {
+      if (confirm("Are you sure you want to reset all stored invoice data?")) {
+        localStorage.removeItem('smarteg_recent_invoice');
+        location.reload();
+      }
+    }
+
     async function generatePDFDoc() {
       const element = document.getElementById('invoice-card');
-      
-      // Temporarily hide elements and set line-height for rendering
       element.classList.add('pdf-render');
 
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -475,14 +590,13 @@
         logging: false,
         windowWidth: 1024,
         onclone: (clonedDoc) => {
-          // Replace interactive input elements with plain text spans in the PDF output
           const inputs = clonedDoc.querySelectorAll('input, textarea');
           inputs.forEach(input => {
-            // Skip hidden radio controls
             if (input.type === 'radio') return;
 
             const span = clonedDoc.createElement('span');
             span.textContent = input.value;
+
             span.style.fontFamily = 'Arial, sans-serif';
             span.style.fontSize = window.getComputedStyle(input).fontSize;
             span.style.fontWeight = 'bold';
@@ -525,7 +639,7 @@
 
       await downloadPDF();
 
-      const message = `Hello *${custName}*,\n\nPlease find attached your clear tax invoice *#${invNo}* for total amount *${totalAmount}*.\n\nThank you!`;
+      const message = `Hello *${custName}*,\n\nPlease find attached your tax invoice *#${invNo}* for total amount *${totalAmount}*.\n\nThank you!`;
       let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
       if (custPhone) {
         url = `https://api.whatsapp.com/send?phone=${custPhone}&text=${encodeURIComponent(message)}`;
@@ -573,7 +687,7 @@
     function generateQRCode() {
       if (!isQREnabled) return;
       const invNo = document.getElementById('inv-no').value || 'DRAFT';
-      const date = document.getElementById('auto-date').textContent;
+      const date = document.getElementById('inv-date').value || '';
       const custName = document.getElementById('buyer-name').value || 'Customer';
       const totalAmount = document.getElementById('grand-total').textContent;
 
@@ -633,39 +747,53 @@
       calculateOverallTotals();
     }
 
-    function numberToWords(num) {
-      const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+    function numberToWords(amount) {
+      const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
+                 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
       const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
 
-      function inWords(n) {
-        if ((n = n.toString()).length > 9) return 'overflow';
-        let n_array = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-        if (!n_array) return '';
-        let str = '';
-        str += (n_array[1] != 0) ? (a[Number(n_array[1])] || b[n_array[1][0]] + ' ' + a[n_array[1][1]]) + 'Crore ' : '';
-        str += (n_array[2] != 0) ? (a[Number(n_array[2])] || b[n_array[2][0]] + ' ' + a[n_array[2][1]]) + 'Lakh ' : '';
-        str += (n_array[3] != 0) ? (a[Number(n_array[3])] || b[n_array[3][0]] + ' ' + a[n_array[3][1]]) + 'Thousand ' : '';
-        str += (n_array[4] != 0) ? (a[Number(n_array[4])] || b[n_array[4][0]] + ' ' + a[n_array[4][1]]) + 'Hundred ' : '';
-        str += (n_array[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n_array[5])] || b[n_array[5][0]] + ' ' + a[n_array[5][1]]) : '';
-        return str;
+      function convertTwoDigits(n) {
+        if (n < 20) return a[n];
+        return (b[Math.floor(n / 10)] + ' ' + a[n % 10]).trim();
       }
 
-      const split = num.toFixed(2).split('.');
-      const rupees = parseInt(split[0], 10);
-      const paisa = parseInt(split[1], 10);
+      function convertGroup(n) {
+        if (n === 0) return '';
+        let str = '';
+        if (Math.floor(n / 100) > 0) {
+          str += a[Math.floor(n / 100)] + ' Hundred ';
+        }
+        str += convertTwoDigits(n % 100);
+        return str.trim();
+      }
+
+      let num = Math.floor(amount);
+      const paisa = Math.round((amount - num) * 100);
+
+      if (num === 0 && paisa === 0) return 'Zero Rupees Only';
+
+      let crore = Math.floor(num / 10000000);
+      num %= 10000000;
+      let lakh = Math.floor(num / 100000);
+      num %= 100000;
+      let thousand = Math.floor(num / 1000);
+      num %= 1000;
+      let hundredAndBelow = num;
 
       let result = '';
-      if (rupees > 0) {
-        result += inWords(rupees) + 'Rupees ';
-      } else {
-        result += 'Zero Rupees ';
-      }
+      if (crore > 0) result += convertTwoDigits(crore) + ' Crore ';
+      if (lakh > 0) result += convertTwoDigits(lakh) + ' Lakh ';
+      if (thousand > 0) result += convertTwoDigits(thousand) + ' Thousand ';
+      if (hundredAndBelow > 0) result += convertGroup(hundredAndBelow) + ' ';
+
+      result = result.trim();
+      result = result ? result + ' Rupees' : 'Zero Rupees';
 
       if (paisa > 0) {
-        result += (rupees > 0 ? 'and ' : '') + inWords(paisa) + 'Paisa ';
+        result += ' and ' + convertTwoDigits(paisa) + ' Paisa';
       }
 
-      return result.trim() + ' Only';
+      return result + ' Only';
     }
 
     function calculateOverallTotals() {
@@ -709,16 +837,33 @@
       const newRow = document.createElement('tr');
       newRow.innerHTML = `
         <td class="text-center row-num">${rowCount}</td>
-        <td><input type="text" class="table-input item-desc" placeholder="Item Name"></td>
-        <td><input type="text" class="table-input item-hsn text-center" placeholder=" "></td>
-        <td><input type="number" class="table-input item-qty text-center" value="1" min="1" oninput="calculateRow(this)"></td>
-        <td><input type="number" class="table-input item-rate text-right" value="0.00" step="0.01" oninput="calculateRow(this)"></td>
-        <td><input type="number" class="table-input item-disc text-center" value="0" min="0" max="100" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="text" class="table-input item-desc" placeholder="Item Name" oninput="saveDataAndSync()"></td>
+        <td><input type="text" class="table-input item-hsn text-center" placeholder=" " oninput="saveDataAndSync()"></td>
+        <td><input type="number" class="table-input item-qty text-center" value="1" min="1" oninput="calculateRow(this); saveDataAndSync();"></td>
+        <td><input type="number" class="table-input item-rate text-right" value="0.00" step="0.01" oninput="calculateRow(this); saveDataAndSync();"></td>
+        <td><input type="number" class="table-input item-disc text-center" value="0" min="0" max="100" step="0.01" oninput="calculateRow(this); saveDataAndSync();"></td>
         <td class="text-right item-taxable">0.00</td>
-        <td><input type="number" class="table-input item-gst text-center" value="18" min="0" oninput="calculateRow(this)"></td>
+        <td><input type="number" class="table-input item-gst text-center" value="18" min="0" oninput="calculateRow(this); saveDataAndSync();"></td>
         <td class="text-right item-total">0.00</td>
+        <td class="text-center col-action"><button type="button" class="btn-del-row" onclick="deleteRow(this)">✕</button></td>
       `;
       tbody.appendChild(newRow);
+      saveDataAndSync();
+    }
+
+    function deleteRow(btn) {
+      const tbody = document.getElementById('items-body');
+      if (tbody.children.length <= 1) {
+        alert("Invoice must contain at least one row.");
+        return;
+      }
+      btn.closest('tr').remove();
+      
+      Array.from(tbody.children).forEach((row, index) => {
+        row.querySelector('.row-num').textContent = index + 1;
+      });
+      calculateOverallTotals();
+      saveDataAndSync();
     }
   </script>
 </body>
